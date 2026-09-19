@@ -1,0 +1,118 @@
+﻿<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buyurtma berish - YouTube Thumbnail Dizayn</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="/">YouTube Thumbnail Dizayn</a>
+    <a class="btn btn-ghost" href="/status.html">Buyurtma holati</a>
+  </div>
+</header>
+
+<section class="section narrow">
+  <div class="wrap">
+    <h1>Buyurtma berish</h1>
+    <p class="lead">Quyidagi shaklni to'ldiring - imkon qadar batafsil yozing, shuncha aniq thumbnail chiqadi.</p>
+
+    <form id="order-form" class="form" enctype="multipart/form-data">
+      <label class="field">
+        <span>Ismingiz</span>
+        <input type="text" name="name" required>
+      </label>
+      <label class="field">
+        <span>Telegram username yoki telefon</span>
+        <input type="text" name="contact" required placeholder="@username yoki +998...">
+      </label>
+      <label class="field">
+        <span>Video haqida (mavzu, sarlavha g'oyasi, uslub)</span>
+        <textarea name="description" rows="6" required placeholder="Masalan: video 'Brend bo'lish nega kerak' haqida, qizil-qora ranglar, katta shrift, hayajonli holat kerak..."></textarea>
+      </label>
+      <label class="field">
+        <span>Odam rasmi (agar kerak bo'lsa) - YUQORI SIFATLI, kamida 2000px</span>
+        <input type="file" name="reference" accept="image/*" id="reference-input">
+        <small class="hint">Sifatsiz/kichik rasmdan sifatli dizayn chiqmaydi - telefon kamerasining asl (siqilmagan) versiyasini yuklang.</small>
+        <small class="hint" id="img-check-msg"></small>
+      </label>
+      <label class="field">
+        <span>Qaysi paket</span>
+        <select name="package">
+          <option value="oddiy">Oddiy - 150 000 so'm (1 thumbnail, 1 tuzatish)</option>
+          <option value="standart">Standart - 300 000 so'm (3 variant + 2 tuzatish)</option>
+          <option value="premium">Premium - kelishilgan (bir nechta video)</option>
+        </select>
+      </label>
+      <button class="btn btn-primary" type="submit">Buyurtma yuborish</button>
+    </form>
+
+    <div id="result" class="result" hidden></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">YouTube Thumbnail Dizayn &middot; Joziba Jumaniyozova</div>
+</footer>
+
+<script>
+const MIN_LONG_EDGE = 2000; // px - eng past ruxsat etilgan sifat chegarasi
+const form = document.getElementById('order-form');
+const result = document.getElementById('result');
+const refInput = document.getElementById('reference-input');
+const imgCheckMsg = document.getElementById('img-check-msg');
+let refImageOk = true;
+
+refInput.addEventListener('change', () => {
+  const file = refInput.files[0];
+  imgCheckMsg.textContent = '';
+  refImageOk = true;
+  if (!file) return;
+  const img = new Image();
+  const url = URL.createObjectURL(file);
+  img.onload = () => {
+    const longEdge = Math.max(img.width, img.height);
+    if (longEdge < MIN_LONG_EDGE) {
+      refImageOk = false;
+      imgCheckMsg.textContent = 'Diqqat: bu rasm sifati past (' + img.width + 'x' + img.height + '). Kamida ' + MIN_LONG_EDGE + 'px kerak - iltimos, asl (siqilmagan) faylni yuklang.';
+      imgCheckMsg.classList.add('warn');
+    } else {
+      imgCheckMsg.textContent = 'Sifat yetarli (' + img.width + 'x' + img.height + ') OK';
+      imgCheckMsg.classList.remove('warn');
+    }
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+});
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (refInput.files[0] && !refImageOk) {
+    const proceed = confirm('Yuklagan rasmingiz sifati past - dizayn sifatiga ta\'sir qilishi mumkin. Baribir davom etasizmi?');
+    if (!proceed) return;
+  }
+  const btn = form.querySelector('button');
+  btn.disabled = true;
+  btn.textContent = 'Yuborilmoqda...';
+  try {
+    const fd = new FormData(form);
+    const res = await fetch('/api/order', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.ok) {
+      form.hidden = true;
+      result.hidden = false;
+      result.innerHTML = '<h3>Rahmat!</h3><p>Buyurtmangiz qabul qilindi. Buyurtma raqamingiz: <b>' + data.orderId + '</b></p><p>Shu raqamni saqlab qo\'ying - holatni "Buyurtma holati" sahifasidan tekshira olasiz. Tez orada siz bilan bog\'lanamiz.</p>';
+    } else {
+      throw new Error(data.error || 'Xatolik');
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Buyurtma yuborish';
+    alert('Xatolik yuz berdi: ' + err.message);
+  }
+});
+</script>
+</body>
+</html>
