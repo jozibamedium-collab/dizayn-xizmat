@@ -1,0 +1,64 @@
+﻿<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buyurtma holati - YouTube Thumbnail Dizayn</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="/">YouTube Thumbnail Dizayn</a>
+    <a class="btn btn-ghost" href="/order.html">Buyurtma berish</a>
+  </div>
+</header>
+
+<section class="section narrow">
+  <div class="wrap">
+    <h1>Buyurtma holatini tekshirish</h1>
+    <form id="status-form" class="form">
+      <label class="field">
+        <span>Buyurtma raqami</span>
+        <input type="text" name="orderId" required placeholder="masalan: a1B2c3">
+      </label>
+      <button class="btn btn-primary" type="submit">Tekshirish</button>
+    </form>
+    <div id="result" class="result" hidden></div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap">YouTube Thumbnail Dizayn &middot; Joziba Jumaniyozova</div>
+</footer>
+
+<script>
+const STATUS_LABELS = {
+  qabul_qilindi: 'Qabul qilindi',
+  tayyorlanmoqda: 'Tayyorlanmoqda',
+  tayyor: 'Tayyor'
+};
+const form = document.getElementById('status-form');
+const result = document.getElementById('result');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const orderId = new FormData(form).get('orderId').trim();
+  result.hidden = false;
+  result.innerHTML = 'Tekshirilmoqda...';
+  try {
+    const res = await fetch('/api/order/' + encodeURIComponent(orderId));
+    if (!res.ok) throw new Error('Bunday buyurtma topilmadi');
+    const data = await res.json();
+    let html = '<h3>Buyurtma #' + data.orderId + '</h3>';
+    html += '<p>Holat: <b>' + (STATUS_LABELS[data.status] || data.status) + '</b></p>';
+    if (data.status === 'tayyor' && data.resultUrl) {
+      html += '<p><a class="btn btn-primary" href="' + data.resultUrl + '" target="_blank">Natijani ko\'rish</a></p>';
+    }
+    result.innerHTML = html;
+  } catch (err) {
+    result.innerHTML = '<p class="warn">' + err.message + '</p>';
+  }
+});
+</script>
+</body>
+</html>
